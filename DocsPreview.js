@@ -17,7 +17,7 @@ if(conf.samp) {
 function _OnStart()
 {
 	app.SetOrientation(app.GetOrientation());
-	
+
 	dlgUpd = app.CreateDialog( "Available Updates", "NoCancel" );
 	lstUpd = app.CreateList( "", 0.8, 0.5 );
 	CheckUpdate();
@@ -28,10 +28,10 @@ function _OnStart()
 	});
 	lstUpd.SetOnTouch( Download );
 	dlgUpd.AddLayout( lstUpd );
-	
-	
+
+
 	lay = app.CreateLayout( "linear", "Left,FillXY" );
-	
+
 	prgBar = app.CreateImage( null, 1, 5/conf.h, "fix", 100, 5 );
 	prgBar.SetBackColor( "#5555ff" );
 	lay.AddChild( prgBar );
@@ -45,7 +45,7 @@ function _OnStart()
 		var url = webDocs.GetUrl().replace("file://" + path, "");
 		edtUrl.data.url = url;
 		edtUrl.SetText( url );
-		
+
 		if(tmt) clearTimeout(tmt);
 		if(p !=  10) prgBar.SetSize( p/100 );
 		if(p == 100) tmt = setTimeout(function() { prgBar.SetSize( 0 ); tmt = 0; }, 500);
@@ -56,7 +56,7 @@ function _OnStart()
 		if(s.startsWith("setTheme('")) updConf("theme", s.slice(10, s.lastIndexOf("'")));
 	});
 	lay.AddChild( webDocs );
-	
+
 	txtBtn = app.CreateText( "▲", 1, -1, "AutoSize" );
 	txtBtn.SetBackGradient( "#111111", "#333333" );
 	txtBtn.data.open = false;
@@ -68,36 +68,36 @@ function _OnStart()
 		txtBtn.SetText(o ? '▲' : '▼');
 	});
 	lay.AddChild( txtBtn );
-	
+
 	app.AddLayout( lay );
-	
+
 	webDocs.SetSize( 1, 1 - prgBar.GetHeight() - txtBtn.GetHeight() );
-	
+
 	layB = app.CreateLayout("linear", "FillXY,TouchThrough,Bottom");
-	
+
 	laySet = app.CreateLayout( "linear", "FillX,TouchThrough" );
 	laySet.SetMargins( 0, 0, 0, txtBtn.GetHeight() );
 	laySet.SetBackColor( "#cc000000" );
 	layB.AddChild( laySet );
 	laySet.Hide();
-	
+
 	var layH = app.CreateLayout("linear", "horizontal");
 	laySet.AddChild( layH );
-	
+
 	edtUrl = app.CreateTextEdit( "docs/Docs.htm", .7, -1, "singleline" );
 	edtUrl.SetTextSize( 14 );
 	edtUrl.SetOnEnter( function() { webDocs.LoadUrl( edtUrl.GetText() ); });
 	edtUrl.SetHint( laySet );
 	layH.AddChild( edtUrl );
-	
+
 	btnReload = app.CreateButton("[fa-refresh]", .1, -1, "fontawesome");
 	btnReload.SetOnTouch( webDocs.Reload );
 	btnReload.SetTextSize( 14 );
 	layH.AddChild( btnReload );
-	
+
 	var layH = app.CreateLayout("linear", "horizontal");
 	laySet.AddChild( layH );
-	
+
 	edtAnchor = app.CreateTextEdit( "", .6, -1, "singleline" );
 	edtAnchor.SetHint( "HTML anchor" );
 	edtAnchor.SetTextSize( 14 );
@@ -106,21 +106,21 @@ function _OnStart()
 		webDocs.Execute("jumpTo('" + edtAnchor.GetText() + "')");
 	})
 	layH.AddChild( edtAnchor );
-	
+
 	btnAnchor = app.CreateButton( "Set" );
 	btnAnchor.SetTextSize( 14 );
 	btnAnchor.SetOnTouch( LoadAnchor );
 	layH.AddChild( btnAnchor );
-	
+
 	layH = app.CreateLayout("linear", "horizontal");
 	laySet.AddChild( layH );
-	
+
 	btnCancel = app.CreateButton("[fa-close]", .1, -1, "fontawesome");
 	btnCancel.SetOnTouch( app.Exit );
 	btnCancel.SetTextColor( "red" );
 	btnCancel.SetTextSize( 14 );
 	layH.AddChild( btnCancel );
-	
+
 	chkDark = app.CreateCheckBox( "Dark Theme" );
 	chkDark.SetChecked( conf.theme == "dark" );
 	chkDark.SetMargins( .05, 0, .05 );
@@ -130,19 +130,19 @@ function _OnStart()
 		webDocs.Execute( 'setTheme("' + (c ? "dark" : "default") + '")' );
 	} );
 	layH.AddChild( chkDark );
-	
+
 	yndUpdDS = app.CreateYesNoDialog("Update DroidScript docs?");
 	yndUpdDS.SetOnTouch( function(res) { if(res == "Yes") UpdateDSDocs(); });
-	
+
 	btnUpdate = app.CreateButton( "Update" );
 	btnUpdate.SetOnTouch( CheckUpdate );
 	layH.AddChild( btnUpdate );
 	btnUpdDS = app.CreateButton( "Update DS" );
 	btnUpdDS.SetOnTouch( yndUpdDS.Show );
 	layH.AddChild( btnUpdDS );
-	
+
 	app.AddLayout( layB );
-	
+
 	var h = edtAnchor.GetHeight();
 	btnCancel.SetSize( -1, h );
 	btnReload.SetSize( -1, h );
@@ -161,7 +161,7 @@ function _OnStart()
 		}
 		else updConf("samp", null);
 	});
-	
+
 	app.EnableBackKey( false );
 }
 
@@ -176,17 +176,17 @@ function loadConf(dflt)
 {
 	conf = dflt;
 	var _conf = app.LoadText("DocsPreviewCfg", false);
-	
+
 	if( _conf )
 	{
 		_conf = JSON.parse(_conf);
 		for(var i in _conf) conf[i] = _conf[i];
 	}
 	else conf.h = app.GetDisplayHeight();
-	
+
 	if(!app.FolderExists("docs")) conf.version = 0;
 	else conf.version = Number(app.ReadFile("docs-version.txt")) || conf.version;
-	
+
 	return conf;
 }
 
@@ -205,66 +205,54 @@ function CheckUpdate()
 	var rv = 0, _e, startup = !app.IsStarted();
 	lstUpd.SetList("Loading...: : ");
 	if( !startup || !conf.version ) dlgUpd.Show();
-	
+
 	app.HttpRequest("GET", "https://raw.githubusercontent.com/",
 		"DroidScript/Docs/master/docs/version.txt", null,
 		function(e, version)
 		{
 			if(e) return !_e && !startup && app.Alert(_e = version);
-			
+
 			if(conf.version < (rv = version))
 				lstUpd.AddItem("Docs: " + version,
 					"Release date: " + new Date((version / 1000 | 0) * 864e5).toLocaleDateString().replace(/\//g, '.') +
 					"\nCurrent: " + conf.version);
 		}
 	);
-	
+
 	app.HttpRequest("GET", "https://raw.githubusercontent.com/",
-		"alex-Symbroson/Docs/master/docs/version.txt", null,
+		"SymDSTools/Docs/master/docs/version.txt", null,
 		function(e, version)
 		{
 			if(e) return !_e && !startup && app.Alert(_e = version);
-			
+
 			if(conf.version < version && rv < version)
-				lstUpd.AddItem("Docs (Beta): " + version,
-					"Release date: " + new Date((version / 1000 | 0) * 864e5).toLocaleDateString().replace(/\//g, '.') +
-					"\nCurrent: " + conf.version);
+				lstUpd.AddItem("Docs (Beta): " + version, "Current: " + conf.version);
 		}
 	);
-	
-	app.HttpRequest("GET", "https://dspk.justplayer.de/", "api/file/66", null,
-		function(e, file)
+
+    app.HttpRequest("GET", "https://raw.githubusercontent.com/", "SymDSTools/DocsPreview/master/version.txt", null,
+		function(e, version)
 		{
 			setTimeout(Ready);
 			if(e) return !_e && startup && app.Alert(_e = file);
-			
-			file = JSON.parse(file);
-			if(file.error) return !_e && !startup && app.Alert(_e = file.message);
-			file = file.message;
-			
-			var desc = file.description.cleartext;
-			
-			var p = desc.indexOf("DocsPreview Version: ");
-			var newver = Number(desc.slice(p + 21, desc.indexOf("\n", p) + 1 || undefined));
+
+			version = Number(version);
 			var curver = Number(app.ReadFile("version.txt"));
-			
-			if(curver < newver)
+
+			if(curver < version)
 			{
-				p = desc.indexOf("Docs Version: ");
 				lstUpd.AddItem(
-					"DocsPreview: " + newver,
-					"Release date: " + new Date((file.update_time / 86400 | 0) * 864e5).toLocaleDateString().replace(/\//g, '.') +
-					"\nCurrent:    " + curver + (p + 1 ? 
-					"\nDocs ver: " + desc.slice(p + 14, desc.indexOf("\n", p) + 1 || undefined) +
-					"\nCurrent:    " + conf.version : ""));
+					"DocsPreview: " + version,
+					"Release date: " + new Date((version / 1000 | 0) * 864e5).toLocaleDateString().replace(/\//g, '.') +
+					"\nCurrent: " + curver);
 			}
 		}
 	);
-	
+
 	function Ready()
 	{
 		lstUpd.SetItemByIndex( 0, "Refresh", lstUpd.GetLength() > 1 ? "Updates found." : "No updates available." );
-		
+
 		if( startup && conf.version && lstUpd.GetLength() > 1 )
 		{
 			var ynd = app.CreateYesNoDialog("There are updates available. Update now?");
@@ -278,12 +266,12 @@ function Download( item )
 {
 	if(item == "Refresh") return CheckUpdate();
 	app.MakeFolder("tmp");
-	
+
 	var dl = app.CreateDownloader();
 	dl.SetOnCancel( function(f) { app.ShowPopup("Download aborted"); } );
 	dl.data.version = Number(item.slice(item.indexOf(":") + 2));
 	dl.SetOnError( app.ShowPopup );
-			
+
 	if(item.startsWith("Docs") && !item[4].match(/[a-z]/i))
 	{
 		var url = "https://github.com/" + (item.indexOf("(Beta)" > -1) ? "alex-Symbroson" : "DroidScript") + "/Docs/archive/master.zip";
@@ -292,9 +280,9 @@ function Download( item )
 	}
 	else if(item.startsWith("DocsPreview"))
 	{
-		var url = "https://dspk.justplayer.de/api/file/66/download";
-		dl.Download( url, path + "tmp", "DocsPreview.spk" );
-		dl.SetOnDownload( ExtractSpk );
+		var url = "https://github.com/SymDSTools/DocsPreview/archive/master.zip";
+		dl.Download( url, path + "tmp", "master.zip" );
+		dl.SetOnDownload( ExtractPreview );
 	}
 }
 
@@ -307,19 +295,19 @@ function ExtractDocs( file, newversion )
 		app.UnzipFile( file, path + "tmp" );
 		file = "tmp/Docs-master/docs/";
 	}
-	
+
 	if(!app.FolderExists(file))
 	{
 		app.Alert("Failed to extract zip file.");
 		return app.HideProgressBar();
 	}
-	
+
 	app.UpdateProgressBar(25);
 	app.DeleteFolder("font-awesome");
 	app.DeleteFolder("docs");
 	app.DeleteFile("app.js");
 	app.DeleteFile("docs-version.txt");
-	
+
 	app.UpdateProgressBar(50);
 	app.RenameFolder(file + "docs", "docs");
 	app.RenameFolder(file + "font-awesome", "font-awesome");
@@ -327,58 +315,45 @@ function ExtractDocs( file, newversion )
 
 	app.RenameFile(file + "version.txt", "docs-version.txt");
 	updConf("version", newversion || Number(app.ReadFile("docs-version.txt")));
-	
+
 	app.UpdateProgressBar(75);
 	app.DeleteFolder("tmp");
 	app.UpdateProgressBar(100);
-	
+
 	if(file) webDocs.Reload();
 	app.HideProgressBar();
 	dlgUpd.Hide();
 }
 
-function renameJs(dir, n)
-{
-	var lst = app.ListFolder(dir, ".js.txt", null, "files");
-	for(var i in lst) app.RenameFile(dir + lst[i], dir + lst[i].replace(".js.txt", ".js"));
-	if(n === 0) return;
-	
-	var lst = app.ListFolder(dir, null, null, "folders");
-	for(var i in lst) renameJs(dir + lst[i] + "/", n - 1);
-}
-
-function ExtractSpk( file, newversion )
+function ExtractPreview( file, newversion )
 {
 	app.ShowProgressBar("Extracting", 0);
 	if(file)
 	{
 		app.Wait(0);
 		app.UnzipFile( file, path + "tmp" );
-		
-		renameJs("tmp/DocsPreview/", 0);
-		renameJs("tmp/DocsPreview/docs/js/", 5);
 	}
-	
-	if(!app.FolderExists("tmp/DocsPreview"))
+
+	if(!app.FolderExists("tmp/DocsPreview-master"))
 	{
 		app.Alert("Failed to extract zip file.");
 		return app.HideProgressBar();
 	}
-	
+
 	app.UpdateProgressBar(25);
 	app.DeleteFolder("Img");
 	app.DeleteFile("version.txt");
 	app.DeleteFile("DocsPreview.js");
-	
+
 	app.UpdateProgressBar(50);
-	var newver, lst = app.ListFolder("tmp/DocsPreview");
+	var newver, lst = app.ListFolder("tmp/DocsPreview-master");
 	for(var i in lst)
 		if("font-awesome,docs,app.js".indexOf(lst[i]) == -1)
-			app.RenameFile("tmp/DocsPreview/" + lst[i], lst[i]);
+			app.RenameFile("tmp/DocsPreview-master/" + lst[i], lst[i]);
 
-	if((newver = Number(app.ReadFile("tmp/DocsPreview/docs/version.txt"))) > conf.version)
+	if((newver = Number(app.ReadFile("tmp/DocsPreview-master/docs/version.txt"))) > conf.version)
 	{
-		app.RenameFolder("tmp/DocsPreview", "tmp/docs");
+		app.RenameFolder("tmp/DocsPreview-master", "tmp/docs");
 		ExtractDocs("tmp/", newver);
 	}
 	else
@@ -387,7 +362,7 @@ function ExtractSpk( file, newversion )
 		app.DeleteFolder("tmp");
 		app.UpdateProgressBar(100);
 	}
-	
+
 	app.SetAlarm("Set", cfg.version, null, Date.now() + 300);
 	app.Exit();
 }
@@ -395,11 +370,17 @@ function ExtractSpk( file, newversion )
 function UpdateDSDocs()
 {
 	app.ShowProgress("Removing old docs");
-	app.DeleteFolder("/sdcard/DroidScript/.edit/docs");
-	
+	app.ListFolder("docs",null,null,"folders").forEach(function(d){
+	    if("plugins".indexOf(d) > -1) return;
+	    app.DeleteFolder("/sdcard/DroidScript/.edit/docs/" + d);
+	    app.ListFolder("docs", d + "_", null, "files").forEach(function(f){
+	        app.DeleteFile("/sdcard/DroidScript/.edit/docs/" + f);
+	    });
+    });
+
 	app.ShowProgress("Copying new docs");
-	app.CopyFolder("docs", "/sdcard/DroidScript/.edit/docs");
-	
+	app.CopyFolder("docs", "/sdcard/DroidScript/.edit/docs", true);
+
 	app.HideProgress();
 	app.ShowPopup("Done.");
 }
