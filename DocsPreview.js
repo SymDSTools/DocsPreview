@@ -1,8 +1,9 @@
+
 cfg.Holo;
 
 (function(){
 
-var conf = loadConf({theme:"dark",h:1000,version:0,samp:null});
+var conf = loadConf({theme:"dark",h:1000,version:0,samp:null,ntfMain:true,ntfBeta:true});
 var path = app.GetAppPath() + "/";
 
 if(conf.samp) {
@@ -19,15 +20,27 @@ function _OnStart()
 	app.SetOrientation(app.GetOrientation());
 
 	dlgUpd = app.CreateDialog( "Available Updates", "NoCancel" );
-	lstUpd = app.CreateList( "", 0.8, 0.5 );
-	CheckUpdate();
-	dlgUpd.SetOnBack( function()
-	{
-		if(conf.version) dlgUpd.Hide();
-		else app.ShowPopup("You need to download the docs first.");
-	});
-	lstUpd.SetOnTouch( Download );
-	dlgUpd.AddLayout( lstUpd );
+	layDlgUpd = app.CreateLayout( "linear" );
+		lstUpd = app.AddList( layDlgUpd, "", 0.8, 0.5 );
+		CheckUpdate();
+		dlgUpd.SetOnBack( function()
+		{
+			if(conf.version) dlgUpd.Hide();
+			else app.ShowPopup("You need to download the docs first.");
+		});
+		lstUpd.SetOnTouch( Download );
+
+		laySetUpd = app.AddLayout(layDlgUpd, "Linear", "Horizontal,VCenter");
+		app.AddText(laySetUpd, "Notify releases: ");
+
+		var ckbNtfMain = app.AddCheckBox(laySetUpd, "Main   ");
+		ckbNtfMain.SetChecked(conf.ntfMain);
+		ckbNtfMain.SetOnTouch(c => updConf("ntfMain", c));
+
+		var ckbNtfBeta = app.AddCheckBox(laySetUpd, "Beta");
+		ckbNtfBeta.SetChecked(conf.ntfBeta);
+		ckbNtfBeta.SetOnTouch(c => updConf("ntfBeta", c));
+	dlgUpd.AddLayout( layDlgUpd );
 
 
 	lay = app.CreateLayout( "linear", "Left,FillXY" );
@@ -36,7 +49,7 @@ function _OnStart()
 	prgBar.SetBackColor( "#5555ff" );
 	lay.AddChild( prgBar );
 
-	webDocs = app.CreateWebView( 1, .95, "NoLongTouch,IgnoreErrors,ScrollFade" );
+	webDocs = app.CreateWebView( 1, .95, "NoLongTouch,IgnoreErrors,ScrollFade,Progress" );
 	webDocs.LoadUrl( "docs/Docs.htm?theme=" + conf.theme );
 	if(conf.theme == "dark") webDocs.SetBackColor("#333333");
 	var tmt = 0;
@@ -128,7 +141,7 @@ function _OnStart()
 	chkDark.SetOnTouch( function(c)
 	{
 		webDocs.Execute( 'setTheme("' + (c ? "dark" : "default") + '")' );
-	} );
+	});
 	layH.AddChild( chkDark );
 
 	yndUpdDS = app.CreateYesNoDialog("Update DroidScript docs?");
@@ -212,7 +225,7 @@ function CheckUpdate()
 		{
 			if(e) return !_e && !startup && app.Alert(_e = version);
 
-			if(conf.version < (rv = version))
+			if(conf.version != (rv = version))
 				lstUpd.AddItem("Docs: " + version,
 					"Release date: " + new Date((version / 1000 | 0) * 864e5).toLocaleDateString().replace(/\//g, '.') +
 					"\nCurrent: " + conf.version);
@@ -230,7 +243,7 @@ function CheckUpdate()
 		}
 	);
 
-    app.HttpRequest("GET", "https://raw.githubusercontent.com/", "SymDSTools/DocsPreview/master/version.txt", null,
+	app.HttpRequest("GET", "https://raw.githubusercontent.com/", "SymDSTools/DocsPreview/master/version.txt", null,
 		function(e, version)
 		{
 			setTimeout(Ready);
@@ -255,6 +268,12 @@ function CheckUpdate()
 
 		if( startup && conf.version && lstUpd.GetLength() > 1 )
 		{
+			var lst = lstUpd.GetList("");
+			if(!(
+				conf.ntfMain && has(lst, "Docs:") ||
+				conf.ntfBeta && has(lst, "(Beta):") ||
+				has(lst, "DocsPreview:")
+			)) return;
 			var ynd = app.CreateYesNoDialog("There are updates available. Update now?");
 			ynd.SetOnTouch( function(res) { if(res == "Yes") dlgUpd.Show(); });
 			ynd.Show();
@@ -274,7 +293,7 @@ function Download( item )
 
 	if(item.startsWith("Docs") && !item[4].match(/[a-z]/i))
 	{
-		var url = "https://github.com/" + (item.indexOf("(Beta)" > -1) ? "alex-Symbroson" : "DroidScript") + "/Docs/archive/master.zip";
+		var url = "https://github.com/" + (has(item, "(Beta)") ? "SymDSTools" : "DroidScript") + "/Docs/archive/master.zip";
 		dl.Download( url, path + "tmp", "master.zip" );
 		dl.SetOnDownload( ExtractDocs );
 	}
@@ -348,7 +367,7 @@ function ExtractPreview( file, newversion )
 	app.UpdateProgressBar(50);
 	var newver, lst = app.ListFolder("tmp/DocsPreview-master");
 	for(var i in lst)
-		if("font-awesome,docs,app.js".indexOf(lst[i]) == -1)
+		if(!has("font-awesome,docs,app.js", lst[i]))
 			app.RenameFile("tmp/DocsPreview-master/" + lst[i], lst[i]);
 
 	if((newver = Number(app.ReadFile("tmp/DocsPreview-master/docs/version.txt"))) > conf.version)
@@ -371,12 +390,12 @@ function UpdateDSDocs()
 {
 	app.ShowProgress("Removing old docs");
 	app.ListFolder("docs",null,null,"folders").forEach(function(d){
-	    if("plugins".indexOf(d) > -1) return;
-	    app.DeleteFolder("/sdcard/DroidScript/.edit/docs/" + d);
-	    app.ListFolder("docs", d + "_", null, "files").forEach(function(f){
-	        app.DeleteFile("/sdcard/DroidScript/.edit/docs/" + f);
-	    });
-    });
+		if(has("plugins", d)) return;
+		app.DeleteFolder("/sdcard/DroidScript/.edit/docs/" + d);
+		app.ListFolder("docs", d + "_", null, "files").forEach(function(f){
+			app.DeleteFile("/sdcard/DroidScript/.edit/docs/" + f);
+		});
+	});
 
 	app.ShowProgress("Copying new docs");
 	app.CopyFolder("docs", "/sdcard/DroidScript/.edit/docs", true);
@@ -384,6 +403,8 @@ function UpdateDSDocs()
 	app.HideProgress();
 	app.ShowPopup("Done.");
 }
+
+function has(l, v) { return l.indexOf(v) > -1; }
 
 function _StartApp(file)
 {
